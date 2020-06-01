@@ -25,7 +25,7 @@ class HashTable:
     def __init__(self, capacity):
         self.bucket_array = [None for i in range(capacity)]
         self.capacity = capacity
-        # self.size = 0 
+       
         
 
 
