@@ -6,6 +6,8 @@ class HashTableEntry:
         self.key = key
         self.value = value
         self.next = None
+    def __repr__(self):
+        return f'HashTableEntry({repr(self.key)},{repr(self.value)})'
 
 
 # Hash table can't have fewer than this many slots
@@ -21,7 +23,11 @@ class HashTable:
     """
 
     def __init__(self, capacity):
-        # Your code here
+        self.bucket_array = [None for i in range(capacity)]
+        self.capacity = capacity
+        # self.size = 0 
+        
+
 
 
     def get_num_slots(self):
@@ -35,6 +41,10 @@ class HashTable:
         Implement this.
         """
         # Your code here
+        print(len(self.bucket_array))
+        return len(self.bucket_array)
+        
+        
 
 
     def get_load_factor(self):
@@ -63,14 +73,21 @@ class HashTable:
         Implement this, and/or FNV-1.
         """
         # Your code here
+        hash = 5381
+        byte_array = str(key).encode("utf-8")
+
+        for byte in byte_array:
+            hash = ((hash * 33) ^ byte) % 0x100000000
+        return hash
 
 
     def hash_index(self, key):
         """
         Take an arbitrary key and return a valid integer index
-        between within the storage capacity of the hash table.
+        within the storage capacity of the hash table.
         """
         #return self.fnv1(key) % self.capacity
+        
         return self.djb2(key) % self.capacity
 
     def put(self, key, value):
@@ -82,6 +99,11 @@ class HashTable:
         Implement this.
         """
         # Your code here
+      
+        slot = self.hash_index(key)
+        self.bucket_array[slot] = value
+         
+
 
 
     def delete(self, key):
@@ -93,6 +115,8 @@ class HashTable:
         Implement this.
         """
         # Your code here
+        self.put(key, None)
+      
 
 
     def get(self, key):
@@ -104,6 +128,8 @@ class HashTable:
         Implement this.
         """
         # Your code here
+        slot = self.hash_index(key)
+        return self.bucket_array[slot]
 
 
     def resize(self, new_capacity):
@@ -132,6 +158,8 @@ if __name__ == "__main__":
     ht.put("line_10", "Long time the manxome foe he sought--")
     ht.put("line_11", "So rested he by the Tumtum tree")
     ht.put("line_12", "And stood awhile in thought.")
+    ht.get_num_slots()
+    
 
     print("")
 
