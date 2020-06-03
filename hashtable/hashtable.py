@@ -13,6 +13,20 @@ class HashTableEntry:
 # Hash table can't have fewer than this many slots
 MIN_CAPACITY = 8
 
+class LinkedList:
+    def __init__(self, node = None):
+        self.head = None
+        self.tail = None
+    def insert_at_tail(self, key, value):
+        new_node = HashTableEntry(key, value)
+        if not self.head:
+            self.head = new_node
+            self.tail = new_node
+        else:
+            self.tail.next = new_node
+            self.tail = new_node
+
+
 
 class HashTable:
     """
@@ -25,6 +39,7 @@ class HashTable:
     def __init__(self, capacity):
         self.bucket_array = [None for i in range(capacity)]
         self.capacity = capacity
+        self.count = 0
        
         
 
@@ -41,7 +56,7 @@ class HashTable:
         Implement this.
         """
         # Your code here
-        print(len(self.bucket_array))
+        print("this is the len of the array", len(self.bucket_array))
         return len(self.bucket_array)
         
         
@@ -54,6 +69,24 @@ class HashTable:
         Implement this.
         """
         # Your code here
+        count = 0
+
+        # for i in range(len(self.bucket_array)):
+        #     if self.bucket_array[i] != None:
+        #         curr = self.bucket_array.head
+        #         while curr.next is not None:
+        #             count += 1 
+
+        #             curr = curr.next
+
+        print("this is count", self.count)
+        print("this is capacity", self.capacity)
+            
+        return self.count / self.get_num_slots()
+        
+        
+
+                
 
 
     def fnv1(self, key):
@@ -100,8 +133,29 @@ class HashTable:
         """
         # Your code here
       
-        slot = self.hash_index(key)
-        self.bucket_array[slot] = value
+        key_hash = self.djb2(key)
+        bucket_index = key_hash % self.capacity
+
+        new_node = HashTableEntry(key, value)
+        current_node = self.bucket_array[bucket_index]
+
+        if current_node:
+            head_node = None
+            while current_node:
+                if current_node.key == key:
+                    # found existing key, replace value
+                    current_node.value = value
+                    return
+                head_node = current_node
+                current_node = current_node.next
+            # if we get this far, we didn't find an existing key
+            # so just append the new node to the end of the bucket
+            head_node.next = new_node
+            self.count += 1 
+        else:
+            self.bucket_array[bucket_index] = new_node
+            self.count += 1 
+            print("this is the new count:", self.count)
          
 
 
@@ -115,7 +169,23 @@ class HashTable:
         Implement this.
         """
         # Your code here
-        self.put(key, None)
+        key_hash = self.djb2(key)
+        bucket_index = key_hash % self.capacity
+
+        current_node = self.bucket_array[bucket_index]
+        if current_node:
+            head_node = None
+            while current_node:
+                if current_node.key == key:
+                    if head_node:
+                        head_node.next = current_node.next
+                    else:
+                        self.bucket_array[bucket_index] = current_node.next
+                else:
+                    print("key not found")
+                head_node = current_node
+                current_node = current_node.next
+        
       
 
 
@@ -128,8 +198,17 @@ class HashTable:
         Implement this.
         """
         # Your code here
-        slot = self.hash_index(key)
-        return self.bucket_array[slot]
+        key_hash = self.djb2(key)
+        bucket_index = key_hash % self.capacity
+
+        current_node = self.bucket_array[bucket_index]
+        if current_node:
+            while current_node:
+                if current_node.key == key:
+                    return current_node.value
+                current_node = current_node.next
+
+        return None
 
 
     def resize(self, new_capacity):
@@ -139,7 +218,29 @@ class HashTable:
 
         Implement this.
         """
-        # Your code here
+        # # Your code here
+        #  # create a copy of the old storage
+        array_copy = self.bucket_array
+            
+        self.count = 0
+            
+        self.capacity = new_capacity
+
+        self.bucket_array = [None] * self.capacity
+            
+            
+        for node_index in range(len(array_copy)):
+            if array_copy[node_index] is not None:
+                cur = array_copy[node_index]
+                while cur.next is not None:
+                    self.put(cur.key, cur.value)
+                    cur = cur.next 
+                self.put(cur.key, cur.value)
+                
+        print("this is load", self.get_load_factor())      
+
+        return array_copy
+    
 
 
 
@@ -159,6 +260,7 @@ if __name__ == "__main__":
     ht.put("line_11", "So rested he by the Tumtum tree")
     ht.put("line_12", "And stood awhile in thought.")
     ht.get_num_slots()
+    ht.get_load_factor()
     
 
     print("")
