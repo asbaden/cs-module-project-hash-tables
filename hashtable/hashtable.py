@@ -57,16 +57,9 @@ class HashTable:
 
         Implement this.
         """
-        # Your code here
         count = 0
 
-        # for i in range(len(self.bucket_array)):
-        #     if self.bucket_array[i] != None:
-        #         curr = self.bucket_array.head
-        #         while curr.next is not None:
-        #             count += 1 
-
-        #             curr = curr.next
+       
 
         print("this is count", self.count)
         print("this is capacity", self.capacity)
