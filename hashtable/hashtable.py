@@ -13,18 +13,7 @@ class HashTableEntry:
 # Hash table can't have fewer than this many slots
 MIN_CAPACITY = 8
 
-class LinkedList:
-    def __init__(self, node = None):
-        self.head = None
-        self.tail = None
-    def insert_at_tail(self, key, value):
-        new_node = HashTableEntry(key, value)
-        if not self.head:
-            self.head = new_node
-            self.tail = new_node
-        else:
-            self.tail.next = new_node
-            self.tail = new_node
+
 
 
 
