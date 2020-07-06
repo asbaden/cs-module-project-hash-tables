@@ -2,18 +2,18 @@ class HashTableEntry:
     """
     Linked List hash table key/value pair
     """
+
     def __init__(self, key, value):
         self.key = key
         self.value = value
         self.next = None
+
     def __repr__(self):
         return f'HashTableEntry({repr(self.key)},{repr(self.value)})'
 
 
 # Hash table can't have fewer than this many slots
 MIN_CAPACITY = 8
-
-
 
 
 
@@ -26,12 +26,10 @@ class HashTable:
     """
 
     def __init__(self, capacity):
-        self.bucket_array = [None for i in range(capacity)]
-        self.capacity = capacity
-        self.count = 0
-       
         
-
+        self.capacity = capacity
+        self.storage = [None] * capacity
+        self.count = 0
 
 
     def get_num_slots(self):
@@ -45,11 +43,7 @@ class HashTable:
         Implement this.
         """
         # Your code here
-        print("this is the len of the array", len(self.bucket_array))
-        return len(self.bucket_array)
-        
-        
-
+        return self.capacity
 
     def get_load_factor(self):
         """
@@ -57,53 +51,44 @@ class HashTable:
 
         Implement this.
         """
-        count = 0
+        pass
 
-       
-
-        print("this is count", self.count)
-        print("this is capacity", self.capacity)
-            
-        return self.count / self.get_num_slots()
-        
-        
-
-                
-
-
-    def fnv1(self, key):
+    def fnv1_64(self, string, seed=0):
         """
-        FNV-1 Hash, 64-bit
-
-        Implement this, and/or DJB2.
+    Returns: The FNV-1 hash of a given string. 
         """
-
-        # Your code here
-
-
-    def djb2(self, key):
-        """
-        DJB2 hash, 32-bit
-
-        Implement this, and/or FNV-1.
-        """
-        # Your code here
-        hash = 5381
-        byte_array = str(key).encode("utf-8")
-
-        for byte in byte_array:
-            hash = ((hash * 33) ^ byte) % 0x100000000
+        # Constants
+        FNV_prime = 1099511628211
+        offset_basis = 14695981039346656037
+        # FNV-1a Hash Function
+        hash = offset_basis + seed
+        for char in string:
+            hash = hash * FNV_prime
+            hash = hash ^ ord(char)
         return hash
 
+    # def djb2(self, key):
+    #     """
+    #     DJB2 hash, 32-bit
+
+    #     Implement this, and/or FNV-1.
+    #     """
+    #     # Your code here
+    #     hash = 5381
+    #     byte_array = str(key).encode("utf-8")
+
+    #     for byte in byte_array:
+    #         hash = ((hash * 33) ^ byte) % 0x100000000
+    #     return hash
 
     def hash_index(self, key):
         """
         Take an arbitrary key and return a valid integer index
         within the storage capacity of the hash table.
         """
-        #return self.fnv1(key) % self.capacity
-        
-        return self.djb2(key) % self.capacity
+        # return self.fnv1(key) % self.capacity
+
+        return self.fnv1_64(key) % self.capacity
 
     def put(self, key, value):
         """
@@ -114,32 +99,9 @@ class HashTable:
         Implement this.
         """
         # Your code here
-      
-        key_hash = self.djb2(key)
-        bucket_index = key_hash % self.capacity
 
-        new_node = HashTableEntry(key, value)
-        current_node = self.bucket_array[bucket_index]
-
-        if current_node:
-            head_node = None
-            while current_node:
-                if current_node.key == key:
-                    # found existing key, replace value
-                    current_node.value = value
-                    return
-                head_node = current_node
-                current_node = current_node.next
-            # if we get this far, we didn't find an existing key
-            # so just append the new node to the end of the bucket
-            head_node.next = new_node
-            self.count += 1 
-        else:
-            self.bucket_array[bucket_index] = new_node
-            self.count += 1 
-            print("this is the new count:", self.count)
-         
-
+        slot = self.hash_index(key)
+        self.storage[slot] = value
 
 
     def delete(self, key):
@@ -151,25 +113,10 @@ class HashTable:
         Implement this.
         """
         # Your code here
-        key_hash = self.djb2(key)
-        bucket_index = key_hash % self.capacity
-
-        current_node = self.bucket_array[bucket_index]
-        if current_node:
-            head_node = None
-            while current_node:
-                if current_node.key == key:
-                    if head_node:
-                        head_node.next = current_node.next
-                    else:
-                        self.bucket_array[bucket_index] = current_node.next
-                else:
-                    print("key not found")
-                head_node = current_node
-                current_node = current_node.next
-        
-      
-
+        if self.get(key):
+            self.put(key, None)
+        else:
+            print("Warning: Key is not Found")
 
     def get(self, key):
         """
@@ -180,18 +127,12 @@ class HashTable:
         Implement this.
         """
         # Your code here
-        key_hash = self.djb2(key)
-        bucket_index = key_hash % self.capacity
-
-        current_node = self.bucket_array[bucket_index]
-        if current_node:
-            while current_node:
-                if current_node.key == key:
-                    return current_node.value
-                current_node = current_node.next
-
-        return None
-
+        slot = self.hash_index(key)
+        if slot:
+            value = self.storage[slot]
+            return value
+        else:
+            return None
 
     def resize(self, new_capacity):
         """
@@ -202,28 +143,7 @@ class HashTable:
         """
         # # Your code here
         #  # create a copy of the old storage
-        array_copy = self.bucket_array
-            
-        self.count = 0
-            
-        self.capacity = new_capacity
-
-        self.bucket_array = [None] * self.capacity
-            
-            
-        for node_index in range(len(array_copy)):
-            if array_copy[node_index] is not None:
-                cur = array_copy[node_index]
-                while cur.next is not None:
-                    self.put(cur.key, cur.value)
-                    cur = cur.next 
-                self.put(cur.key, cur.value)
-                
-        print("this is load", self.get_load_factor())      
-
-        return array_copy
-    
-
+        pass
 
 
 if __name__ == "__main__":
@@ -243,7 +163,6 @@ if __name__ == "__main__":
     ht.put("line_12", "And stood awhile in thought.")
     ht.get_num_slots()
     ht.get_load_factor()
-    
 
     print("")
 
