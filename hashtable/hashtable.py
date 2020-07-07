@@ -6,16 +6,10 @@ class HashTableEntry:
         self.key = key
         self.value = value
         self.next = None
-    def __repr__(self):
-        return f'HashTableEntry({repr(self.key)},{repr(self.value)})'
-
+       
 
 # Hash table can't have fewer than this many slots
 MIN_CAPACITY = 8
-
-
-
-
 
 class HashTable:
     """
@@ -26,11 +20,10 @@ class HashTable:
     """
 
     def __init__(self, capacity):
-        self.bucket_array = [None for i in range(capacity)]
-        self.capacity = capacity
+        # Your code here
+        self.capacity = capacity 
+        self.storage = [None] * capacity
         self.count = 0
-       
-        
 
 
 
@@ -45,10 +38,7 @@ class HashTable:
         Implement this.
         """
         # Your code here
-        print("this is the len of the array", len(self.bucket_array))
-        return len(self.bucket_array)
-        
-        
+        return self.capacity
 
 
     def get_load_factor(self):
@@ -57,28 +47,23 @@ class HashTable:
 
         Implement this.
         """
-        count = 0
-
-       
-
-        print("this is count", self.count)
-        print("this is capacity", self.capacity)
-            
-        return self.count / self.get_num_slots()
-        
-        
-
-                
-
-
-    def fnv1(self, key):
-        """
-        FNV-1 Hash, 64-bit
-
-        Implement this, and/or DJB2.
-        """
-
         # Your code here
+        # laod factor is the number of elements, divided by the number of slots in the bucket array 
+        load_factor = self.count / self.capacity
+        return load_factor 
+
+
+    def fnv1_64(self, string, seed = 0):
+	    #Constants
+        FNV_prime = 1099511628211
+        offset_basis = 14695981039346656037
+
+        #FNV-1a Hash Function
+        hash = offset_basis + seed
+        for char in string:
+            hash = hash * FNV_prime
+            hash = hash ^ ord(char)
+        return hash
 
 
     def djb2(self, key):
@@ -88,22 +73,15 @@ class HashTable:
         Implement this, and/or FNV-1.
         """
         # Your code here
-        hash = 5381
-        byte_array = str(key).encode("utf-8")
-
-        for byte in byte_array:
-            hash = ((hash * 33) ^ byte) % 0x100000000
-        return hash
 
 
     def hash_index(self, key):
         """
         Take an arbitrary key and return a valid integer index
-        within the storage capacity of the hash table.
+        between within the storage capacity of the hash table.
         """
-        #return self.fnv1(key) % self.capacity
-        
-        return self.djb2(key) % self.capacity
+        return self.fnv1_64(key) % self.capacity
+        # return self.djb2(key) % self.capacity
 
     def put(self, key, value):
         """
@@ -113,32 +91,45 @@ class HashTable:
 
         Implement this.
         """
-        # Your code here
-      
-        key_hash = self.djb2(key)
-        bucket_index = key_hash % self.capacity
-
+        #
+        #something in the slot 
+        #this is slot where the passed in value goes in storage 
+        index_slot = self.hash_index(key)
+        #this is pointing to the where the index of the passed in value will go 
+        current_node = self.storage[index_slot]
+        
+        #creates a node that we will use in the bucket
         new_node = HashTableEntry(key, value)
-        current_node = self.bucket_array[bucket_index]
-
+        
+        #if the index is already occupied
         if current_node:
+            #establish a head node
             head_node = None
+            #create a while loop to traverse the bucket array
             while current_node:
+                #at each node, check to see if the occupied element's key matches the passed in key
+
                 if current_node.key == key:
-                    # found existing key, replace value
+                    # if the key matches, update the value 
                     current_node.value = value
                     return
+                # if the key does not match, we change the head node to the current node
                 head_node = current_node
+                #change the current node to traverse
                 current_node = current_node.next
-            # if we get this far, we didn't find an existing key
-            # so just append the new node to the end of the bucket
+            # there is no key that matches the key being passed in 
+            # so add the new node to the end of the bucket 
             head_node.next = new_node
+            #increment the counter for load factor calculation
             self.count += 1 
         else:
-            self.bucket_array[bucket_index] = new_node
+            #if the current_node is point to none 
+            # pass the new node into the bucket 
+            self.storage[index_slot] = new_node
             self.count += 1 
-            print("this is the new count:", self.count)
-         
+    
+
+
 
 
 
@@ -151,24 +142,34 @@ class HashTable:
         Implement this.
         """
         # Your code here
-        key_hash = self.djb2(key)
-        bucket_index = key_hash % self.capacity
-
-        current_node = self.bucket_array[bucket_index]
-        if current_node:
-            head_node = None
-            while current_node:
-                if current_node.key == key:
-                    if head_node:
-                        head_node.next = current_node.next
-                    else:
-                        self.bucket_array[bucket_index] = current_node.next
-                else:
-                    print("key not found")
-                head_node = current_node
-                current_node = current_node.next
         
-      
+        # find the slot where the hashed key is placed 
+        index_slot = self.hash_index(key)
+        # assign a variable to the node that is occupying that slot (current_node)
+        current_node = self.storage[index_slot]
+        # create a conditional checking if the node at that slot exists
+        if current_node:
+            #create a conditional, checking if the first node is equal to the searched key
+            if current_node.key == key:
+                #if it is, set that index_slot to current_node.next 
+                self.storage[index_slot] = current_node.next
+                return
+            # create a variable for the prev_node 
+            prev_node = None 
+            # traverse that index with a while loop, looking for the node which has a key that matches the key we are searching for 
+            while current_node:
+                # if a node's key matches the one we are searching for 
+                if current_node.key == key:
+                    # set the prev_node.next to the curr.next 
+                    prev_node.next = current_node.next
+                #else, set prev_node to the current_node, set the current_node to current node.next 
+                prev_node = current_node
+                current_node = current_node.next 
+
+        # else we have not found the key we are looking to delete, return ("key not found")
+        else:
+            print("Warning: Key not found")
+                
 
 
     def get(self, key):
@@ -180,18 +181,25 @@ class HashTable:
         Implement this.
         """
         # Your code here
-        key_hash = self.djb2(key)
-        bucket_index = key_hash % self.capacity
+        # find the index_slot where the searched value is placed
+        index_slot = self.hash_index(key)
+        #create a variable to point to the contents of the slot
+        current_node = self.storage[index_slot]
 
-        current_node = self.bucket_array[bucket_index]
-        if current_node:
+        
+        #with a conditional, check to see if the index slot has a node in it
+        if current_node: 
+            # if so, traverse the bucket 
             while current_node:
+                # check if the node in the bucket has a matching key to the one we are searching for 
                 if current_node.key == key:
+                    #if so, return that value
                     return current_node.value
+                    #if not, move to the next node in the bucket 
                 current_node = current_node.next
-
-        return None
-
+        #if the index slot has no node, return None
+        return None 
+        
 
     def resize(self, new_capacity):
         """
@@ -200,30 +208,36 @@ class HashTable:
 
         Implement this.
         """
-        # # Your code here
-        #  # create a copy of the old storage
-        array_copy = self.bucket_array
-            
-        self.count = 0
-            
+        # Your code here
+        # accounting for the load factor
+        #create a copy of the bucket array 
+        array_copy = self.storage
+        
+        # overwrite storage with the new capacity 
         self.capacity = new_capacity
+        # update self.storage 
+        self.storage = [None] * self.capacity
+        
+        #take whats in the copied array, and rehash all the elements into the new array 
+        for element in range(0, len(array_copy)):
+            # check if the element is not none
+            if array_copy[element] is not None:
+                # if it is not none, assign a variable to the node index
+                current_node = array_copy[element]
+                #create a while loop to traverse through the bucket
+                while current_node.next is not None:
+                    # call the put function, passing the node's key and value 
+                    self.put(current_node.key, current_node.value)
+                    # after each call, traverse the linked list 
+                    current_node = current_node.next 
+                # once we are outside the loop, call the put funciton, passing the element.key and element.value 
+                self.put(current_node.key, current_node.value) 
+        # return the array 
+        return self.storage
 
-        self.bucket_array = [None] * self.capacity
-            
-            
-        for node_index in range(len(array_copy)):
-            if array_copy[node_index] is not None:
-                cur = array_copy[node_index]
-                while cur.next is not None:
-                    self.put(cur.key, cur.value)
-                    cur = cur.next 
-                self.put(cur.key, cur.value)
-                
-        print("this is load", self.get_load_factor())      
 
-        return array_copy
-    
 
+        
 
 
 if __name__ == "__main__":
@@ -241,9 +255,6 @@ if __name__ == "__main__":
     ht.put("line_10", "Long time the manxome foe he sought--")
     ht.put("line_11", "So rested he by the Tumtum tree")
     ht.put("line_12", "And stood awhile in thought.")
-    ht.get_num_slots()
-    ht.get_load_factor()
-    
 
     print("")
 
